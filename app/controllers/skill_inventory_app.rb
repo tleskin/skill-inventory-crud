@@ -1,14 +1,8 @@
-require 'models/skill_inventory'
-require 'pony'
-
 class SkillInventoryApp < Sinatra::Base
-  set :root, File.join(File.dirname(__FILE__), '..')
-  set :method_override, true
 
-
-  use Rack::Auth::Basic, "Restricted Area" do |username, password|
-    username == 'admin' and password == 'admin'
-  end
+  # use Rack::Auth::Basic, "Restricted Area" do |username, password|
+  #   username == 'admin' and password == 'admin'
+  # end
 
   get '/' do
     erb :dashboard
@@ -51,11 +45,4 @@ class SkillInventoryApp < Sinatra::Base
     SkillInventory.delete(id.to_i)
     redirect '/skills'
   end
-
-  post '/signup' do
-  Pony.mail :to => 'tleskin@gmail.com',
-            :from => 'tleskin@gmail.com',
-            :subject => 'Howdy, Partna!'
-  end
-
 end

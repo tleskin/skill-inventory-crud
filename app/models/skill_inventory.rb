@@ -1,50 +1,40 @@
-require 'yaml/store'
-require_relative 'skill'
+require 'sequel'
 
 class SkillInventory
   def self.database
-    @database ||= YAML::Store.new("db/skill_inventory")
+    if ENV["TASK_MANAGER_ENV"] == 'test'
+      @database ||= Sequel.sqlite("db/skill_inventory_test.sqlite3")
+    else
+      @database ||= Sequel.sqlite("db/skill_inventory_development.sqlite3")
+    end
   end
 
   def self.create(skill)
-    database.transaction do
-      database['skills'] ||= []
-      database['total']  ||= 0
-      database['total']   += 1
-      database['skills'] << { "id" => database['total'], "name" => skill[:name], "status" => skill[:status]}
-    end
-  end
-
-  def self.raw_skills
-    database.transaction do
-      database['skills'] || []
-    end
+    data = {"name" => skill[:name], "status" => skill[:status]}
+    database.from(:skills).insert(data)
   end
 
   def self.all
-    raw_skills.map {|data| Skill.new(data) }
-  end
-
-  def self.raw_skill(id)
-    raw_skills.find {|skill| skill["id"] == id}
+    database.from(:skills).all.map do |raw_skill|
+      Skill.new(raw_skill)
+    end
   end
 
   def self.find(id)
-    Skill.new(raw_skill(id))
+    raw_skill = database.from(:skills).where(:id => id).to_a.first
+    Skill.new(raw_skill)
   end
 
   def self.update(id, skill)
-    database.transaction do
-      target = database['skills'].find { |data| data["id"] == id}
-      target["name"] = skill[:name]
-      target["status"] = skill[:status]
-    end
+    database.from(:skills).where(id: id).update(name: skill[:name], status: skill[:status])
   end
 
   def self.delete(id)
-    database.transaction do
-      database['skills'].delete_if { |skill| skill["id"] == id }
-    end
+    database.from(:skills).where(:id => id).delete
+  end
+
+  def self.delete_all
+    database.from(:skills).delete
   end
 
 end
